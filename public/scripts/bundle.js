@@ -86,7 +86,7 @@
 	    value: function sendMessageOrNothing(e) {
 	      e.preventDefault();
 	      if (e.keyCode == 13) {
-	        this.props.sendMessage(this.props.currentMessage, this.props.currentUser);
+	        this.props.sendMessage();
 	      }
 	    }
 	  }, {
@@ -98,9 +98,6 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      (0, _lodash.each)(this.props.chats, function (name, message) {
-	        return console.log(name, message);
-	      });
 	      return React.createElement(
 	        'div',
 	        null,
@@ -111,7 +108,22 @@
 	            onKeyUp: this.sendMessageOrNothing.bind(this),
 	            onChange: this.update.bind(this),
 	            value: this.props.currentMessage,
-	            placeholder: 'send message as ' + this.props.currentUser })
+	            placeholder: 'send message as ' + this.props.currentUser }),
+	          (0, _lodash.map)(this.props.chats, function (c) {
+	            return React.createElement(
+	              'div',
+	              null,
+	              React.createElement(
+	                'b',
+	                null,
+	                c.name
+	              ),
+	              ': ',
+	              c.message,
+	              ' ',
+	              React.createElement('br', null)
+	            );
+	          })
 	        )
 	      );
 	    }
@@ -128,8 +140,11 @@
 	
 	    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatContainer).call(this));
 	
-	    var name = _this2.getName();
+	    _this2.socket = io.connect('/');
 	
+	    var name = _this2.assignName();
+	
+	    _this2.initEvents();
 	    _this2.state = { chats: [],
 	      users: [],
 	      serverNotifications: [],
@@ -150,8 +165,8 @@
 	        setCurrentMessage: this.setCurrentMessage.bind(this) });
 	    }
 	  }, {
-	    key: 'getName',
-	    value: function getName() {
+	    key: 'assignName',
+	    value: function assignName() {
 	      var name = window.names[Math.floor(Math.random() * window.names.length)];
 	      var tokens = name.split(',');
 	
@@ -159,41 +174,34 @@
 	        return (0, _lodash.trim)(tokens[1]) + " " + (0, _lodash.trim)(tokens[0]);
 	      }
 	
+	      this.setState({ users: this.state.users.concat(name) });
+	
 	      return name;
 	    }
 	  }, {
-	    key: 'sendMessage',
-	    value: function sendMessage(message, user) {
-	      this.setState({ chats: this.state.chats.concat({ name: user, message: message }) });
-	    }
-	  }, {
-	    key: 'setCurrentMessage',
-	    value: function setCurrentMessage(m) {
-	      this.setState({ currentMessage: m });
-	    }
-	  }, {
-	    key: 'createSocket',
-	    value: function createSocket() {
-	      var socket = io.connect('/');
+	    key: 'initEvents',
+	    value: function initEvents() {
+	      var _this3 = this;
 	
-	      socket.on('connect', function () {
-	        socket.emit('adduser', name);
-	      });
+	      this.socket.on('connect', (0, _lodash.bind)(function () {
+	        _this3.socket.emit('adduser', _this3.state.currentUser);
+	      }, this));
 	
-	      socket.on('updatechat', function (username, data) {
+	      this.socket.on('updatechat', (0, _lodash.bind)(function (username, data) {
 	        //$('#conversation').append('<b>'+ escaped(username) + ':</b> ' + escaped(data) + "<br/>");
 	        console.log(username + " " + data);
-	      });
+	        _this3.setState({ chats: _this3.state.chats.concat({ name: username, message: data }) });
+	      }, this));
 	
-	      socket.on('updateusers', function (data) {
+	      this.socket.on('updateusers', (0, _lodash.bind)(function (data) {
 	        //$('#users').empty();
 	        (0, _lodash.each)(data, function (key, value) {
 	          //$('#users').append('<div><a href="' + searchUrlFor(key) + '" target="_blank">' + key + '</div>');
 	          console.log(key + " " + value);
 	        });
-	      });
+	      }, this));
 	
-	      socket.on('servernotification', function (data) {
+	      this.socket.on('servernotification', (0, _lodash.bind)(function (data) {
 	        var searchUrl = searchUrlFor(data.username);
 	        if (data.connected) {
 	          if (data.to_self) data.username = "you";
@@ -204,8 +212,22 @@
 	          //$('#conversation').append('disconnected: <a href="' + searchUrl + '" target="_blank">' + escaped(data.username) + "</a><br/>");
 	          console.log('disconnected: ' + data.username);
 	        }
-	      });
-	
+	      }, this));
+	    }
+	  }, {
+	    key: 'sendMessage',
+	    value: function sendMessage() {
+	      this.socket.emit('sendchat', this.state.currentMessage);
+	      this.setState({ currentMessage: "" });
+	    }
+	  }, {
+	    key: 'setCurrentMessage',
+	    value: function setCurrentMessage(m) {
+	      this.setState({ currentMessage: m });
+	    }
+	  }, {
+	    key: 'createSocket',
+	    value: function createSocket() {
 	      this.setState({ socket: socket });
 	    }
 	  }, {

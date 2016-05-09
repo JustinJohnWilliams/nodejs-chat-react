@@ -1,12 +1,12 @@
 import { Component } from 'react';
-import { trim, each } from 'lodash';
+import { trim, each, bind, map } from 'lodash';
 
 class ChatView extends Component {
 
   sendMessageOrNothing(e) {
     e.preventDefault();
     if(e.keyCode == 13) {
-      this.props.sendMessage(this.props.currentMessage, this.props.currentUser);
+      this.props.sendMessage();
     }
   }
 
@@ -16,7 +16,6 @@ class ChatView extends Component {
   }
 
   render() {
-    each(this.props.chats, (name, message) => console.log(name, message))
       return (
         <div>
           <div className="col-md-8">
@@ -26,6 +25,7 @@ class ChatView extends Component {
                    value={this.props.currentMessage}
                    placeholder={`send message as ${this.props.currentUser}`} />
 
+            { map(this.props.chats, c => <div><b>{c.name}</b>: {c.message} <br /></div>) }
           </div>
         </div>
       );
@@ -36,8 +36,11 @@ class ChatContainer extends Component {
   constructor() {
     super();
 
-    var name = this.getName();
+    this.socket = io.connect('/');
 
+    var name = this.assignName();
+
+    this.initEvents();
     this.state = { chats: [],
                    users:[],
                    serverNotifications: [],
@@ -56,7 +59,7 @@ class ChatContainer extends Component {
     );
   }
 
-  getName() {
+  assignName() {
     var name = window.names[Math.floor(Math.random() * window.names.length)];
     var tokens = name.split(',');
 
@@ -64,38 +67,31 @@ class ChatContainer extends Component {
       return trim(tokens[1]) + " " + trim(tokens[0]);
     }
 
+    this.setState({users: this.state.users.concat(name)});
+
     return name;
   }
 
-  sendMessage(message, user) {
-    this.setState({chats: this.state.chats.concat({ name: user, message: message })});
-  }
+  initEvents() {
+    this.socket.on('connect', bind(() => {
+      this.socket.emit('adduser', this.state.currentUser);
+    }, this));
 
-  setCurrentMessage(m) {
-    this.setState({currentMessage: m});
-  }
-
-  createSocket() {
-    var socket = io.connect('/');
-
-    socket.on('connect', function() {
-      socket.emit('adduser', name);
-    });
-
-    socket.on('updatechat', function (username, data) {
+    this.socket.on('updatechat', bind((username, data) => {
       //$('#conversation').append('<b>'+ escaped(username) + ':</b> ' + escaped(data) + "<br/>");
       console.log(username + " " + data);
-    });
+      this.setState({chats: this.state.chats.concat({ name: username, message: data })});
+    }, this));
 
-    socket.on('updateusers', function(data) {
+    this.socket.on('updateusers', bind((data) => {
       //$('#users').empty();
       each(data, function(key, value) {
         //$('#users').append('<div><a href="' + searchUrlFor(key) + '" target="_blank">' + key + '</div>');
         console.log(key + " " + value);
       });
-    });
+    }, this));
 
-    socket.on('servernotification', function (data) {
+    this.socket.on('servernotification', bind((data) => {
       var searchUrl = searchUrlFor(data.username);
       if(data.connected) {
         if(data.to_self) data.username = "you";
@@ -106,8 +102,19 @@ class ChatContainer extends Component {
         //$('#conversation').append('disconnected: <a href="' + searchUrl + '" target="_blank">' + escaped(data.username) + "</a><br/>");
         console.log('disconnected: ' + data.username);
       }
-    });
+    }, this));
+  }
 
+  sendMessage() {
+    this.socket.emit('sendchat', this.state.currentMessage);
+    this.setState({currentMessage: ""});
+  }
+
+  setCurrentMessage(m) {
+    this.setState({currentMessage: m});
+  }
+
+  createSocket() {
     this.setState({socket: socket});
   }
 
