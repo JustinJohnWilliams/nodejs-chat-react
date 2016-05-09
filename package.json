@@ -18,8 +18,10 @@
     "babel-register": "^6.8.0",
     "ejs": "~1.0.0",
     "express": "~4.13.4",
+    "lodash": "^4.3.0",
     "react": "^15.0.2",
     "socket.io": "~0.9.11",
+    "unirest": "^0.4.2",
     "webpack": "^1.13.0"
   },
   "subdomain": "amirrajan-nodejs-chat",
