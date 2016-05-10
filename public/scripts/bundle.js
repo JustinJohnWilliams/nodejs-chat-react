@@ -296,11 +296,6 @@
 	    value: function setCurrentMessage(m) {
 	      this.setState({ currentMessage: m });
 	    }
-	  }, {
-	    key: 'createSocket',
-	    value: function createSocket() {
-	      this.setState({ socket: socket });
-	    }
 	  }]);
 	
 	  return ChatContainer;

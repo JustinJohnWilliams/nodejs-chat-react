@@ -147,10 +147,6 @@ class ChatContainer extends Component {
   setCurrentMessage(m) {
     this.setState({currentMessage: m});
   }
-
-  createSocket() {
-    this.setState({socket: socket});
-  }
 }
 
 
