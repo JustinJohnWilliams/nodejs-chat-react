@@ -1,6 +1,17 @@
 import { Component } from 'react';
 import { trim, each, bind, map } from 'lodash';
 
+class ChatResultItem extends Component {
+  render() {
+    return (
+      <div>
+        <b>{this.props.name}</b>: {this.props.message}
+        <br />
+      </div>
+    );
+  }
+}
+
 class ChatView extends Component {
 
   sendMessageOrNothing(e) {
@@ -15,6 +26,13 @@ class ChatView extends Component {
     this.props.setCurrentMessage(e.target.value);
   }
 
+  renderChats() {
+    return map(this.props.chats,
+               w => <ChatResultItem name={w.name}
+                message={w.message}
+                key={Math.random()} />);
+  }
+
   render() {
       return (
         <div>
@@ -25,7 +43,7 @@ class ChatView extends Component {
                    value={this.props.currentMessage}
                    placeholder={`send message as ${this.props.currentUser}`} />
 
-            { map(this.props.chats, c => <div><b>{c.name}</b>: {c.message} <br /></div>) }
+            { this.renderChats() }
           </div>
         </div>
       );
@@ -39,13 +57,15 @@ class ChatContainer extends Component {
     this.socket = io.connect('/');
 
     var name = this.assignName();
+    var url = this.assignUrl(name);
 
     this.initEvents();
     this.state = { chats: [],
                    users:[],
                    serverNotifications: [],
                    currentMessage: "",
-                   currentUser: name };
+                   currentUser: name,
+                   currentUserUrl: url};
   }
 
   render() {
@@ -54,6 +74,7 @@ class ChatContainer extends Component {
                 serverNotifications={this.state.serverNotifications}
                 currentMessage={this.state.currentMessage}
                 currentUser={this.state.currentUser}
+                currentUserUrl={this.state.currentUserUrl}
                 sendMessage={this.sendMessage.bind(this)}
                 setCurrentMessage={this.setCurrentMessage.bind(this)} />
     );
@@ -70,6 +91,10 @@ class ChatContainer extends Component {
     this.setState({users: this.state.users.concat(name)});
 
     return name;
+  }
+
+  assignUrl(name) {
+    return 'https://www.google.com/search?q=' + encodeURIComponent(name) + '%20site:wikipedia.org&btnI=3564';
   }
 
   initEvents() {
