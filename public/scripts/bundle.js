@@ -72,8 +72,70 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var ChatView = function (_Component) {
-	  _inherits(ChatView, _Component);
+	var ChatResultItem = function (_Component) {
+	  _inherits(ChatResultItem, _Component);
+	
+	  function ChatResultItem() {
+	    _classCallCheck(this, ChatResultItem);
+	
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(ChatResultItem).apply(this, arguments));
+	  }
+	
+	  _createClass(ChatResultItem, [{
+	    key: 'render',
+	    value: function render() {
+	      if (!this.props.name) return React.createElement(
+	        'div',
+	        null,
+	        this.props.message
+	      );
+	      return React.createElement(
+	        'div',
+	        null,
+	        React.createElement(
+	          'b',
+	          null,
+	          this.props.name
+	        ),
+	        ': ',
+	        this.props.message,
+	        React.createElement('br', null)
+	      );
+	    }
+	  }]);
+	
+	  return ChatResultItem;
+	}(_react.Component);
+	
+	var UserResultItem = function (_Component2) {
+	  _inherits(UserResultItem, _Component2);
+	
+	  function UserResultItem() {
+	    _classCallCheck(this, UserResultItem);
+	
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(UserResultItem).apply(this, arguments));
+	  }
+	
+	  _createClass(UserResultItem, [{
+	    key: 'render',
+	    value: function render() {
+	      return React.createElement(
+	        'div',
+	        null,
+	        React.createElement(
+	          'a',
+	          { href: 'https://www.google.com/search?q=\'' + encodeURIComponent(this.props.name) + '\'%20site:wikipedia.org&btnI=3564', target: '_blank' },
+	          this.props.name
+	        )
+	      );
+	    }
+	  }]);
+	
+	  return UserResultItem;
+	}(_react.Component);
+	
+	var ChatView = function (_Component3) {
+	  _inherits(ChatView, _Component3);
 	
 	  function ChatView() {
 	    _classCallCheck(this, ChatView);
@@ -96,11 +158,39 @@
 	      this.props.setCurrentMessage(e.target.value);
 	    }
 	  }, {
+	    key: 'renderChats',
+	    value: function renderChats() {
+	      return (0, _lodash.map)(this.props.chats, function (w) {
+	        return React.createElement(ChatResultItem, { name: w.name,
+	          message: w.message,
+	          key: Math.random() });
+	      });
+	    }
+	  }, {
+	    key: 'renderUsers',
+	    value: function renderUsers() {
+	      return (0, _lodash.map)(this.props.users, function (u) {
+	        return React.createElement(UserResultItem, { name: u, key: Math.random() });
+	      });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      return React.createElement(
 	        'div',
-	        null,
+	        { className: 'row' },
+	        React.createElement(
+	          'div',
+	          { className: 'col-md-4' },
+	          React.createElement(
+	            'b',
+	            null,
+	            'Users'
+	          ),
+	          React.createElement('hr', null),
+	          this.renderUsers(),
+	          React.createElement('hr', { className: 'visible-xs visible-sm' })
+	        ),
 	        React.createElement(
 	          'div',
 	          { className: 'col-md-8' },
@@ -109,21 +199,8 @@
 	            onChange: this.update.bind(this),
 	            value: this.props.currentMessage,
 	            placeholder: 'send message as ' + this.props.currentUser }),
-	          (0, _lodash.map)(this.props.chats, function (c) {
-	            return React.createElement(
-	              'div',
-	              null,
-	              React.createElement(
-	                'b',
-	                null,
-	                c.name
-	              ),
-	              ': ',
-	              c.message,
-	              ' ',
-	              React.createElement('br', null)
-	            );
-	          })
+	          React.createElement('hr', null),
+	          this.renderChats()
 	        )
 	      );
 	    }
@@ -132,25 +209,25 @@
 	  return ChatView;
 	}(_react.Component);
 	
-	var ChatContainer = function (_Component2) {
-	  _inherits(ChatContainer, _Component2);
+	var ChatContainer = function (_Component4) {
+	  _inherits(ChatContainer, _Component4);
 	
 	  function ChatContainer() {
 	    _classCallCheck(this, ChatContainer);
 	
-	    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatContainer).call(this));
+	    var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatContainer).call(this));
 	
-	    _this2.socket = io.connect('/');
+	    _this4.socket = io.connect('/');
 	
-	    var name = _this2.assignName();
+	    var name = _this4.assignName();
 	
-	    _this2.initEvents();
-	    _this2.state = { chats: [],
+	    _this4.initEvents();
+	    _this4.state = { chats: [],
 	      users: [],
 	      serverNotifications: [],
 	      currentMessage: "",
 	      currentUser: name };
-	    return _this2;
+	    return _this4;
 	  }
 	
 	  _createClass(ChatContainer, [{
@@ -181,36 +258,30 @@
 	  }, {
 	    key: 'initEvents',
 	    value: function initEvents() {
-	      var _this3 = this;
+	      var _this5 = this;
 	
 	      this.socket.on('connect', (0, _lodash.bind)(function () {
-	        _this3.socket.emit('adduser', _this3.state.currentUser);
+	        _this5.socket.emit('adduser', _this5.state.currentUser);
 	      }, this));
 	
 	      this.socket.on('updatechat', (0, _lodash.bind)(function (username, data) {
-	        //$('#conversation').append('<b>'+ escaped(username) + ':</b> ' + escaped(data) + "<br/>");
-	        console.log(username + " " + data);
-	        _this3.setState({ chats: _this3.state.chats.concat({ name: username, message: data }) });
+	        _this5.setState({ chats: _this5.state.chats.concat({ name: username, message: data }) });
 	      }, this));
 	
 	      this.socket.on('updateusers', (0, _lodash.bind)(function (data) {
-	        //$('#users').empty();
-	        (0, _lodash.each)(data, function (key, value) {
-	          //$('#users').append('<div><a href="' + searchUrlFor(key) + '" target="_blank">' + key + '</div>');
-	          console.log(key + " " + value);
-	        });
+	        _this5.setState({ users: [] });
+	        (0, _lodash.each)(data, (0, _lodash.bind)(function (username) {
+	          _this5.setState({ users: _this5.state.users.concat(username) });
+	        }, _this5));
 	      }, this));
 	
 	      this.socket.on('servernotification', (0, _lodash.bind)(function (data) {
-	        var searchUrl = searchUrlFor(data.username);
 	        if (data.connected) {
 	          if (data.to_self) data.username = "you";
 	
-	          //$('#conversation').append('connected: <a href="' + searchUrl + '" target="_blank">' + escaped(data.username) + "</a><br/>");
-	          console.log('connected: ' + data.username);
+	          _this5.setState({ chats: _this5.state.chats.concat({ message: 'connected: ' + data.username }) });
 	        } else {
-	          //$('#conversation').append('disconnected: <a href="' + searchUrl + '" target="_blank">' + escaped(data.username) + "</a><br/>");
-	          console.log('disconnected: ' + data.username);
+	          _this5.setState({ chats: _this5.state.chats.concat({ message: 'disconnected: ' + data.username }) });
 	        }
 	      }, this));
 	    }
@@ -229,20 +300,6 @@
 	    key: 'createSocket',
 	    value: function createSocket() {
 	      this.setState({ socket: socket });
-	    }
-	  }, {
-	    key: 'wireUpSocket',
-	    value: function wireUpSocket() {
-	
-	      $(function () {
-	        $('#data').keypress(function (e) {
-	          if (e.which == 13) {
-	            var message = $('#data').val();
-	            $('#data').val('');
-	            this.props.socket.emit('sendchat', message);
-	          }
-	        });
-	      });
 	    }
 	  }]);
 	
