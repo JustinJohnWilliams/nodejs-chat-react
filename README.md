@@ -12,6 +12,10 @@ Run the app:
 
     nodemon start.js
 
+To do es6 front end compilation:
+
+    webpack --watch
+
 Then navigate to `http://localhost:3000`
 
 ##Signing up, and deploying to Heroku
